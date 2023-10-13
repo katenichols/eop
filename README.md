@@ -1,5 +1,5 @@
-# Проект «Extra Ordinary Places» [![Build status][travis-image]][travis-url] [![Dependency status][dependency-image]][dependency-url]
-<!-- # Проект «Extra Ordinary Places» -->
+<!-- # Проект «Extra Ordinary Places» [![Build status][travis-image]][travis-url] [![Dependency status][dependency-image]][dependency-url] -->
+# Проект «Extra Ordinary Places»
 
 * Разработчик: [Екатерина Суслова](https://#).
 
