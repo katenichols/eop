@@ -1,10 +1,10 @@
 const gulp = require('gulp');
-const sass = require('gulp-sass')(require('sass'));
-const browerSync = require('browser-sync').create();
 const plumber = require('gulp-plumber');
 const sourcemap = require('gulp-sourcemaps');
+const sass = require('gulp-sass');
 const postcss = require('gulp-postcss');
 const autoprefixer = require('autoprefixer');
+const server = require('browser-sync').create();
 const csso = require('gulp-csso');
 const rename = require('gulp-rename');
 const imagemin = require('gulp-imagemin');
@@ -12,28 +12,8 @@ const webp = require('gulp-webp');
 const svgstore = require('gulp-svgstore');
 const del = require('del');
 const webpackStream = require('webpack-stream');
-// const webpackConfig = require('./webpack.config.js');
-// const gcmq = require('gulp-group-css-media-queries');
-
-// const style = () => {
-//   return gulp.src('./scss/**/*.scss')
-//     .pipe(sass())
-//     .pipe(gulp.dest('./css'))
-//     .pipe(browerSync.stream())
-// }
-
-// const watch = () => {
-//   browerSync.init({
-//     server: {
-//       baseDir: './'
-//     }
-//   })
-//   gulp.watch('./scss/**/*.scss', style);
-//   gulp.watch('./*.html').on('change', browerSync.reload);
-// }
-
-// exports.style = style;
-// exports.watch = watch;
+const webpackConfig = require('./webpack.config.js');
+const gcmq = require('gulp-group-css-media-queries');
 
 const css = () => {
   return gulp.src('source/sass/style.scss')
@@ -43,7 +23,7 @@ const css = () => {
     .pipe(postcss([autoprefixer({
       grid: true,
     })]))
-    // .pipe(gcmq()) // выключите, если в проект импортятся шрифты через ссылку на внешний источник
+    .pipe(gcmq()) // выключите, если в проект импортятся шрифты через ссылку на внешний источник
     .pipe(gulp.dest('build/css'))
     .pipe(csso())
     .pipe(rename('style.min.css'))
@@ -55,7 +35,7 @@ const css = () => {
 const js = () => {
   return gulp.src(['source/js/main.js'])
     .pipe(webpackStream(webpackConfig))
-    .pipe(gulp.dest('build/js'))
+    .pipe(gulp.dest('build/js'));
 };
 
 const svgo = () => {
@@ -95,6 +75,7 @@ const copy = () => {
     'source/fonts/**',
     'source/img/**',
     'source/favicon/**',
+    'source/db/**'
   ], {
     base: 'source',
   })
@@ -132,6 +113,36 @@ const refresh = (done) => {
   done();
 };
 
-const build = gulp.series(clean, svgo, copy, css, sprite, js);
+// Optional tasks
+//---------------------------------
+
+// Используйте отличное от дефолтного значение root, если нужно обработать отдельную папку в img,
+// а не все изображения в img во всех папках.
+
+// root = '' - по дефолту webp добавляются и обналяются во всех папках в source/img/
+// root = 'content/' - webp добавляются и обновляются только в source/img/content/
+
+const createWebp = () => {
+  const root = 'content/';
+  return gulp.src(`source/img/${root}**/*.{png,jpg}`)
+    .pipe(webp({quality: 90}))
+    .pipe(gulp.dest(`build/img/${root}`));
+};
+
+const optimizeImages = () => {
+  return gulp.src('build/img/**/*.{png,jpg}')
+    .pipe(imagemin([
+      imagemin.optipng({optimizationLevel: 3}),
+      imagemin.mozjpeg({quality: 75, progressive: true}),
+    ]))
+    .pipe(gulp.dest('build/img'));
+};
+
+const build = gulp.series(clean, svgo, copy, css, sprite, js, createWebp);
 
 const start = gulp.series(build, syncServer);
+
+exports.imagemin = optimizeImages;
+exports.webp = createWebp;
+exports.start = start;
+exports.build = build;
